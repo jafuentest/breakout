@@ -11,27 +11,27 @@ class Ball(object):
     def __init__(self, puck):
         super(Ball, self).__init__()
         self.puck = puck
+        self.direction = math.radians(315)
+        self.speed = 0.5
         self.x = 400
-        self.y = 600
-        self.direction_x = 0
-        self.direction_y = -0.5
+        self.y = 300
 
     def move(self):
         if self.x < 0 or self.x > 800:
-            self.direction_x *= -1
+            self.direction = math.radians(180 - math.degrees(self.direction))
         if self.y < 0 or self.y > 600:
-            self.direction_y *= -1
-        # print (f"ball <= puck @ {self.getRect().bottom <= self.puck.getRect().top}")
+            self.direction = math.radians(360 - math.degrees(self.direction))
 
         was_hit_by_puck = self.getRect().colliderect(self.puck.getRect())
         was_hit_with_the_top_of_puck = self.getRect().bottom - 1 <= self.puck.getRect().top
+        
         if was_hit_by_puck and was_hit_with_the_top_of_puck:
-            # print (f"mouse @ {self.getRect().bottom} {self.puck.getRect().top}")
-            self.direction_x = self.puck.getSpeedX() / 2
-            self.direction_y *= -1
+            self.direction = math.radians(math.degrees(self.direction) + 180)
 
-        self.x += self.direction_x
-        self.y += self.direction_y
+        self.x += self.speed * math.cos(self.direction)
+        self.y -= self.speed * math.sin(self.direction)
+
+        print (f"mouse @ {self.x} {self.y} @ {math.degrees(self.direction)}")
 
     def draw(self, screen):
         self.move()
@@ -40,9 +40,6 @@ class Ball(object):
     def getRect(self):
         return pygame.Rect(self.x, self.y, 10, 10)
 
-    def setSpeed(self, speed_x):
-        self.direction_x = speed_x
-
 
 class Puck(object):
     """docstring for Puck"""
@@ -50,15 +47,9 @@ class Puck(object):
         super(Puck, self).__init__()
         self.x = 0
         self.y = 500
-        self.speed_x = 0
-        self.speed_y = 0
 
     def move(self, mouse):
-        # if y < 500:
-        #     y = 500
-
         self.x = pygame.mouse.get_pos()[0]
-        # self.y = y
 
     def draw(self, screen):
         pygame.draw.rect(screen, BLUE, self.getRect())
@@ -68,17 +59,8 @@ class Puck(object):
 
     def updateSpeed(self):
         current_mouse_velocity = pygame.mouse.get_rel()
-        # max_speed = abs(max(current_mouse_velocity, key=abs))
         max_speed = current_mouse_velocity[0]
-        print (f"mouse @ {max_speed}")
 
-        if max_speed == 0:
-            self.speed_x = 0
-        else:
-            self.speed_x = current_mouse_velocity[0] / max_speed
-
-    def getSpeedX(self):
-        return self.speed_x
 
 # define a main function
 def main():
