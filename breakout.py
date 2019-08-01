@@ -4,26 +4,47 @@ import math
 WHITE = (255, 255, 255)
 BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
+GREY = (100, 100, 100)
+
+SCREEN_SIZE = (800, 600)
 
 BALL_SIZE = (10, 10)
+BALL_SPEED = 0.75
+
+BRICK_SIZE = (40, 25)
+
+
+class Brick(object):
+    """docstring for Brick"""
+    def __init__(self, i, j):
+        super(Brick, self).__init__()
+        self.i = i
+        self.j = j
+
+    def draw(self, screen):
+        pygame.draw.rect(screen, GREY, self.getRect())
+
+    def getRect(self):
+        return pygame.Rect(self.i + 2, self.j + 2, BRICK_SIZE[0] - 4, BRICK_SIZE[1] - 4)
+
 
 class Ball(object):
     """docstring for Ball"""
-    def __init__(self, puck):
+    def __init__(self, puck, bricks):
         super(Ball, self).__init__()
         self.puck = puck
         self.direction = math.radians(270)
-        self.speed = 1
-        self.x = 400
-        self.y = 300
+        self.speed = BALL_SPEED
+        self.i = 400
+        self.j = 300
 
     def move(self):
         # If it hits a side of the screen, flip angle vertically
-        if self.x < 0 or self.x > 800:
+        if self.i < 0 or self.i > 800:
             self.direction = math.radians(180 - math.degrees(self.direction))
-        
+
         # If it hits top/bottom of the screen, flip angle horizontally
-        if self.y < 0 or self.y > 600:
+        if self.j < 0 or self.j > SCREEN_SIZE[1]:
             self.direction = math.radians(360 - math.degrees(self.direction))
 
         was_hit_by_puck = self.getRect().colliderect(self.puck.getRect())
@@ -32,57 +53,71 @@ class Ball(object):
         # If hit by the puck go up and apply angle depending on which part of
         # the puck it was hit by
         if was_hit_by_puck and was_hit_with_the_top_of_puck:
-            collision_x = self.x - self.puck.getX() + BALL_SIZE[0]
+            collision_x = self.i - self.puck.getX() + BALL_SIZE[0]
             collision_x *= 150 / 180
             self.direction = math.radians(180 - collision_x)
             print (f"mouse @ { collision_x }")
 
         # Set new position base on speed and angle
-        self.x += self.speed * math.cos(self.direction)
-        self.y -= self.speed * math.sin(self.direction)
+        self.i += self.speed * math.cos(self.direction)
+        self.j -= self.speed * math.sin(self.direction)
 
     def draw(self, screen):
         self.move()
         pygame.draw.rect(screen, BLACK, self.getRect())
 
     def getRect(self):
-        return pygame.Rect((self.x, self.y), BALL_SIZE)
+        return pygame.Rect((self.i, self.j), BALL_SIZE)
 
 
 class Puck(object):
     """docstring for Puck"""
     def __init__(self):
         super(Puck, self).__init__()
-        self.x = 0
-        self.y = 500
+        self.i = 0
+        self.j = 500
 
     def draw(self, screen):
         pygame.draw.rect(screen, BLUE, self.getRect())
 
     def getRect(self):
-        return pygame.Rect(self.x, self.y, 170, 50)
+        return pygame.Rect(self.i, self.j, 170, 50)
 
     def getX(self):
-        return self.x
+        return self.i
 
-    def setX(self, x):
-        self.x = x
+    def setX(self, i):
+        self.i = i
+
+
+def generateGrid():
+    rows = 3 * BRICK_SIZE[1]
+    bricks = []
+    for i in range(0, SCREEN_SIZE[0] - 1, BRICK_SIZE[0]):
+        for j in range(0, rows - 1, BRICK_SIZE[1]):
+            bricks.append(Brick(i, j))
+
+    return bricks
+
 
 def main():
     pygame.init()
     pygame.display.set_caption('Breakout')
 
-    screen = pygame.display.set_mode((800,600), 0, 32)
+    screen = pygame.display.set_mode((800, SCREEN_SIZE[1]), 0, 32)
 
     running = True
 
     puck = Puck()
-    ball = Ball(puck)
+    bricks = generateGrid()
+    ball = Ball(puck, bricks)
 
     while running:
         screen.fill(WHITE)
         ball.draw(screen)
         puck.draw(screen)
+        for brick in bricks:
+            brick.draw(screen)
 
         for event in pygame.event.get():
             # Stop running when the user clicks close window button
