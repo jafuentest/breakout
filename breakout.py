@@ -13,7 +13,7 @@ BALL_SPEED = 0.75
 
 BRICK_SIZE = (40, 25)
 
-PUCK_SIZE = (170, 50)
+PADDLE_SIZE = (170, 50)
 
 
 class Brick(object):
@@ -24,28 +24,28 @@ class Brick(object):
         self.j = j
 
     def draw(self, screen):
-        pygame.draw.rect(screen, WHITE, self.getRect())
-        pygame.draw.rect(screen, GREY, self.getInsideRect())
+        pygame.draw.rect(screen, WHITE, self.get_rect())
+        pygame.draw.rect(screen, GREY, self.get_inside_rect())
 
-    def getInsideRect(self):
+    def get_inside_rect(self):
         return pygame.Rect(self.i + 2, self.j + 2, BRICK_SIZE[0] - 4, BRICK_SIZE[1] - 4)
 
-    def getRect(self):
+    def get_rect(self):
         return pygame.Rect(self.i, self.j, BRICK_SIZE[0], BRICK_SIZE[1])
 
 
 class Ball(object):
     """docstring for Ball"""
-    def __init__(self, puck, bricks):
+    def __init__(self, paddle, bricks):
         super(Ball, self).__init__()
         self.bricks = bricks
-        self.puck = puck
+        self.paddle = paddle
         self.direction = math.radians(270)
         self.speed = BALL_SPEED
         self.i = 400
         self.j = 300
 
-    def getRect(self):
+    def get_rect(self):
         return pygame.Rect((self.i, self.j), BALL_SIZE)
 
     def move(self):
@@ -57,7 +57,7 @@ class Ball(object):
         if self.j < 0 or self.j > SCREEN_SIZE[1]:
             self.direction = math.radians(360 - math.degrees(self.direction))
 
-        self.check_puck_collision()
+        self.check_paddle_collision()
         self.check_bricks_collision()
 
         # Set new position based on speed and angle
@@ -66,7 +66,7 @@ class Ball(object):
 
     def check_bricks_collision(self):
         for brick in self.bricks:
-            did_hit_brick = self.getRect().colliderect(brick.getRect())
+            did_hit_brick = self.get_rect().colliderect(brick.get_rect())
 
             # If did hit a brick go up mirror direction horizontally
             if did_hit_brick:
@@ -74,35 +74,35 @@ class Ball(object):
                 self.bricks.remove(brick)
                 self.direction = math.radians(360 - math.degrees(self.direction))
 
-    def check_puck_collision(self):
-        was_hit = self.getRect().colliderect(self.puck.getRect())
-        with_the_top = self.getRect().bottom - 1 <= self.puck.getRect().top
+    def check_paddle_collision(self):
+        was_hit = self.get_rect().colliderect(self.paddle.get_rect())
+        with_the_top = self.get_rect().bottom - 1 <= self.paddle.get_rect().top
 
-        # If hit by the puck go up and apply angle depending on which part of
-        # the puck it was hit by
+        # If hit by the paddle go up and apply angle depending on which part of
+        # the paddle it was hit by
         if was_hit and with_the_top:
-            collision_x = self.i - self.puck.get_i() + BALL_SIZE[0]
-            collision_x *= PUCK_SIZE[0] / 180
+            collision_x = self.i - self.paddle.get_i() + BALL_SIZE[0]
+            collision_x *= PADDLE_SIZE[0] / 180
             self.direction = math.radians(180 - collision_x)
             print (f"collision degrees: { collision_x }, new direction: { 180 - collision_x }")
 
     def draw(self, screen):
         self.move()
-        pygame.draw.rect(screen, BLACK, self.getRect())
+        pygame.draw.rect(screen, BLACK, self.get_rect())
 
 
-class Puck(object):
-    """docstring for Puck"""
+class Paddle(object):
+    """docstring for Paddle"""
     def __init__(self):
-        super(Puck, self).__init__()
+        super(Paddle, self).__init__()
         self.i = 0
         self.j = 500
 
     def draw(self, screen):
-        pygame.draw.rect(screen, BLUE, self.getRect())
+        pygame.draw.rect(screen, BLUE, self.get_rect())
 
-    def getRect(self):
-        return pygame.Rect(self.i, self.j, PUCK_SIZE[0], 50)
+    def get_rect(self):
+        return pygame.Rect(self.i, self.j, PADDLE_SIZE[0], 50)
 
     def get_i(self):
         return self.i
@@ -111,7 +111,7 @@ class Puck(object):
         self.i = i
 
 
-def generateGrid():
+def generate_grid():
     rows = 3 * BRICK_SIZE[1]
     bricks = []
     for i in range(0, SCREEN_SIZE[0] - 1, BRICK_SIZE[0]):
@@ -129,14 +129,14 @@ def main():
 
     running = True
 
-    puck = Puck()
-    bricks = generateGrid()
-    ball = Ball(puck, bricks)
+    paddle = Paddle()
+    bricks = generate_grid()
+    ball = Ball(paddle, bricks)
 
     while running:
         screen.fill(WHITE)
         ball.draw(screen)
-        puck.draw(screen)
+        paddle.draw(screen)
         for brick in bricks:
             brick.draw(screen)
 
@@ -148,7 +148,7 @@ def main():
             # React to the user moving the mouse
             if event.type == pygame.MOUSEMOTION:
                 mouse_position = pygame.mouse.get_pos()
-                puck.set_i(mouse_position[0])
+                paddle.set_i(mouse_position[0])
 
         pygame.display.update()
 
