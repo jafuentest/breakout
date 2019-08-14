@@ -7,12 +7,12 @@ BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
 GREY = (100, 100, 100)
 
-SCREEN_SIZE = (800, 600)
-
 BALL_SIZE = [20, 20]
 BALL_SPEED = 0.75
 
-BRICK_SIZE = (40, 25)
+BRICK_SIZE = (40, 20)
+
+SCREEN_SIZE = (BRICK_SIZE[0]*14, BRICK_SIZE[1]*8*5)
 
 PADDLE_SIZE = (170, 50)
 
@@ -50,7 +50,7 @@ class Ball(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
         # Variables that make movement possible
-        self.direction = math.radians(270)
+        self.direction = 270
         self.speed = BALL_SPEED
         # rect.x/y are treated as int, i/j on the other hand, we can treat as floats
         self.rect.x = self.i = 400
@@ -60,19 +60,19 @@ class Ball(pygame.sprite.Sprite):
 
     def move(self):
         # If it hits a side of the screen, flip angle vertically
-        if self.rect.x < 0 or self.rect.x > 800:
-            self.direction = math.radians(180 - math.degrees(self.direction))
+        if self.rect.x < 0 or self.rect.x > SCREEN_SIZE[0] - BALL_SIZE[0]:
+            self.direction = 180 - self.direction % 360
 
         # If it hits top/bottom of the screen, flip angle horizontally
         if self.rect.y < 0 or self.rect.y > SCREEN_SIZE[1]:
-            self.direction = math.radians(360 - math.degrees(self.direction))
+            self.direction = 360 - self.direction % 360
 
         self.check_paddle_collision()
         self.check_bricks_collision()
 
         # Set new position based on speed and angle
-        self.i += self.speed * math.cos(self.direction)
-        self.j -= self.speed * math.sin(self.direction)
+        self.i += self.speed * math.cos(math.radians(self.direction))
+        self.j -= self.speed * math.sin(math.radians(self.direction))
         self.rect.x = self.i
         self.rect.y = self.j
 
@@ -83,18 +83,18 @@ class Ball(pygame.sprite.Sprite):
         return math.hypot(p[0] - x, p[1])
 
     def get_brick_collision_side(self, brick):
-        if math.degrees(self.direction) == 90:
+        if self.direction == 90:
             return 'bottom'
 
         distances = {}
 
-        if math.degrees(self.direction) > 270:
+        if self.direction >= 270:
             distances['top'] = abs(brick.rect.top - self.rect.y)
             distances['left'] = abs(brick.rect.left - self.rect.x)
-        elif math.degrees(self.direction) > 180:
+        elif self.direction >= 180:
             distances['top'] = abs(brick.rect.top - self.rect.y)
             distances['right'] = abs(brick.rect.right - self.rect.x)
-        elif math.degrees(self.direction) > 90:
+        elif self.direction >= 90:
             distances['bottom'] = abs(brick.rect.bottom - self.rect.y)
             distances['right'] = abs(brick.rect.right - self.rect.x)
         else:
@@ -114,10 +114,10 @@ class Ball(pygame.sprite.Sprite):
             collided_side = self.get_brick_collision_side(brick)
 
             brick.kill()
-            if collided_side == 'top' or collided_side == 'bottom':
-                self.direction = math.radians(360 - math.degrees(self.direction))
+            if collided_side == 'left' or collided_side == 'right':
+                self.direction = 180 - self.direction % 360
             else:
-                self.direction = math.radians(180 - math.degrees(self.direction))
+                self.direction = 360 - self.direction % 360
 
     def calculate_direction(self):
         max_angle = 180 - 2 * DEGREE_NORMALIZATION_FACTOR
@@ -136,7 +136,7 @@ class Ball(pygame.sprite.Sprite):
         if was_hit and with_the_top:
             new_angle = self.calculate_direction()
 
-            self.direction = math.radians(180 - new_angle)
+            self.direction = 180 - new_angle % 360
 
 
 class Paddle(pygame.sprite.Sprite):
@@ -150,7 +150,7 @@ class Paddle(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
         self.rect.x = 0
-        self.rect.y = 500
+        self.rect.y = SCREEN_SIZE[1] - PADDLE_SIZE[1]
 
     def set_x(self, x):
         if x > SCREEN_SIZE[0] - PADDLE_SIZE[0]:
@@ -159,10 +159,11 @@ class Paddle(pygame.sprite.Sprite):
 
 
 def generate_grid():
-    rows = 3 * BRICK_SIZE[1]
+    rows = 8 * BRICK_SIZE[1]
+    cols = 14 * BRICK_SIZE[0]
     bricks = pygame.sprite.Group()
-    for i in range(0, SCREEN_SIZE[0] - 1, BRICK_SIZE[0]):
-        for j in range(0, rows - 1, BRICK_SIZE[1]):
+    for i in range(0, cols - 1, BRICK_SIZE[0]):
+        for j in range(rows, rows * 2 - 1, BRICK_SIZE[1]):
             bricks.add(Brick(i, j))
 
     return bricks
@@ -174,7 +175,7 @@ def main():
 
     pygame.mouse.set_visible(0)
 
-    screen = pygame.display.set_mode((800, SCREEN_SIZE[1]), 0, 32)
+    screen = pygame.display.set_mode((SCREEN_SIZE[0], SCREEN_SIZE[1]), 0, 32)
 
     running = True
 
