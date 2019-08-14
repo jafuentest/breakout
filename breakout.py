@@ -52,6 +52,7 @@ class Ball(pygame.sprite.Sprite):
         # Variables that make movement possible
         self.direction = math.radians(270)
         self.speed = BALL_SPEED
+        # rect.x/y are treated as int, i/j on the other hand, we can treat as floats
         self.rect.x = self.i = 400
         self.rect.y = self.j = 300
 
@@ -75,15 +76,48 @@ class Ball(pygame.sprite.Sprite):
         self.rect.x = self.i
         self.rect.y = self.j
 
+    def distance_h(self, y, p):
+        return math.hypot(p[0], p[1] - y)
+
+    def distance_v(self, x, p):
+        return math.hypot(p[0] - x, p[1])
+
+    def get_brick_collision_side(self, brick):
+        if math.degrees(self.direction) == 90:
+            return 'bottom'
+
+        distances = {}
+
+        if math.degrees(self.direction) > 270:
+            distances['top'] = abs(brick.rect.top - self.rect.y)
+            distances['left'] = abs(brick.rect.left - self.rect.x)
+        elif math.degrees(self.direction) > 180:
+            distances['top'] = abs(brick.rect.top - self.rect.y)
+            distances['right'] = abs(brick.rect.right - self.rect.x)
+        elif math.degrees(self.direction) > 90:
+            distances['bottom'] = abs(brick.rect.bottom - self.rect.y)
+            distances['right'] = abs(brick.rect.right - self.rect.x)
+        else:
+            distances['bottom'] = abs(brick.rect.bottom - self.rect.y)
+            distances['left'] = abs(brick.rect.left - self.rect.x)
+
+        return min(distances, key=distances.get)
+
+
     def check_bricks_collision(self):
         for brick in self.bricks:
-            did_hit_brick = pygame.sprite.collide_rect(self, brick)
-            from_top = self.rect.bottom - 1 <= self.paddle.rect.top
+            collided = pygame.sprite.collide_rect(self, brick)
 
-            # If did hit a brick go up mirror direction horizontally
-            if did_hit_brick:
-                brick.kill()
+            if not collided:
+                continue
+
+            collided_side = self.get_brick_collision_side(brick)
+
+            brick.kill()
+            if collided_side == 'top' or collided_side == 'bottom':
                 self.direction = math.radians(360 - math.degrees(self.direction))
+            else:
+                self.direction = math.radians(180 - math.degrees(self.direction))
 
     def calculate_direction(self):
         max_angle = 180 - 2 * DEGREE_NORMALIZATION_FACTOR
@@ -132,7 +166,6 @@ def generate_grid():
             bricks.add(Brick(i, j))
 
     return bricks
-
 
 def main():
     pygame.init()
