@@ -22,14 +22,13 @@ class Brick(pygame.sprite.Sprite):
     """docstring for Brick"""
     def __init__(self, x, y):
         super(Brick, self).__init__()
+        x = x + 2
+        y = y + 2
 
         # Variables to draw the brick
-        self.image = pygame.Surface(BRICK_SIZE)
-        self.image.fill(WHITE)
+        self.image = pygame.Surface((BRICK_SIZE[0] - 4, BRICK_SIZE[1] - 4))
+        self.image.fill(GREY)
         self.rect = self.image.get_rect()
-
-        inside_rect = [self.rect.x + 2, self.rect.y + 2, self.rect.w - 4, self.rect.h - 4]
-        pygame.draw.rect(self.image, GREY, inside_rect)
 
         # Variables that make movement possible
         self.rect.x = x
@@ -43,6 +42,8 @@ class Ball(pygame.sprite.Sprite):
         # Objects that the ball interacts with
         self.bricks = bricks
         self.paddle = paddle
+        self.x = 400
+        self.y = 300
 
         # Variables to draw the ball
         self.image = pygame.Surface(BALL_SIZE)
@@ -52,9 +53,9 @@ class Ball(pygame.sprite.Sprite):
         # Variables that make movement possible
         self.direction = 270
         self.speed = BALL_SPEED
-        # rect.x/y are treated as int, i/j on the other hand, we can treat as floats
-        self.rect.x = self.i = 400
-        self.rect.y = self.j = 300
+
+        self.rect.x = self.x
+        self.rect.y = self.y
 
         pygame.draw.ellipse(self.image, (255,0,0), self.rect)
 
@@ -71,16 +72,10 @@ class Ball(pygame.sprite.Sprite):
         self.check_bricks_collision()
 
         # Set new position based on speed and angle
-        self.i += self.speed * math.cos(math.radians(self.direction))
-        self.j -= self.speed * math.sin(math.radians(self.direction))
-        self.rect.x = self.i
-        self.rect.y = self.j
-
-    def distance_h(self, y, p):
-        return math.hypot(p[0], p[1] - y)
-
-    def distance_v(self, x, p):
-        return math.hypot(p[0] - x, p[1])
+        self.x += self.speed * math.cos(math.radians(self.direction))
+        self.y -= self.speed * math.sin(math.radians(self.direction))
+        self.rect.x = self.x
+        self.rect.y = self.y
 
     def get_brick_collision_side(self, brick):
         if self.direction == 90:
@@ -115,9 +110,9 @@ class Ball(pygame.sprite.Sprite):
 
             brick.kill()
             if collided_side == 'left' or collided_side == 'right':
-                self.direction = 180 - self.direction % 360
+                self.direction = (180 - self.direction) % 360
             else:
-                self.direction = 360 - self.direction % 360
+                self.direction = (360 - self.direction) % 360
 
     def calculate_direction(self):
         max_angle = 180 - 2 * DEGREE_NORMALIZATION_FACTOR
@@ -135,7 +130,6 @@ class Ball(pygame.sprite.Sprite):
         # the paddle it was hit by
         if was_hit and with_the_top:
             new_angle = self.calculate_direction()
-
             self.direction = 180 - new_angle % 360
 
 
