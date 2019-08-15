@@ -43,7 +43,7 @@ class Ball(pygame.sprite.Sprite):
         self.bricks = bricks
         self.paddle = paddle
         self.x = 400
-        self.y = 300
+        self.y = 600
 
         # Variables to draw the ball
         self.image = pygame.Surface(BALL_SIZE)
@@ -62,11 +62,11 @@ class Ball(pygame.sprite.Sprite):
     def move(self):
         # If it hits a side of the screen, flip angle vertically
         if self.rect.x < 0 or self.rect.x > SCREEN_SIZE[0] - BALL_SIZE[0]:
-            self.direction = 180 - self.direction % 360
+            self.direction = 540 - self.direction % 360
 
         # If it hits top/bottom of the screen, flip angle horizontally
         if self.rect.y < 0 or self.rect.y > SCREEN_SIZE[1]:
-            self.direction = 360 - self.direction % 360
+            self.direction = 360 - self.direction
 
         self.check_paddle_collision()
         self.check_bricks_collision()
@@ -110,9 +110,9 @@ class Ball(pygame.sprite.Sprite):
 
             brick.kill()
             if collided_side == 'left' or collided_side == 'right':
-                self.direction = (180 - self.direction) % 360
+                self.direction = (540 - self.direction) % 360
             else:
-                self.direction = (360 - self.direction) % 360
+                self.direction = (360 - self.direction)
 
     def calculate_direction(self):
         max_angle = 180 - 2 * DEGREE_NORMALIZATION_FACTOR
@@ -130,7 +130,7 @@ class Ball(pygame.sprite.Sprite):
         # the paddle it was hit by
         if was_hit and with_the_top:
             new_angle = self.calculate_direction()
-            self.direction = 180 - new_angle % 360
+            self.direction = (540 - new_angle) % 360
 
 
 class Paddle(pygame.sprite.Sprite):
