@@ -2,19 +2,19 @@ import pygame
 import math
 
 WHITE = (255, 255, 255)
+GREY = (100, 100, 100)
+BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
-BLACK = (0, 0, 0)
-GREY = (100, 100, 100)
 
 BALL_SIZE = [20, 20]
 BALL_SPEED = 5
 
 BRICK_SIZE = (40, 20)
 
-SCREEN_SIZE = (BRICK_SIZE[0]*14, BRICK_SIZE[1]*8*5)
+PADDLE_SIZE = (120, 20)
 
-PADDLE_SIZE = (170, 50)
+SCREEN_SIZE = (BRICK_SIZE[0] * 14, BRICK_SIZE[1] * 8 * 5)
 
 DEGREE_NORMALIZATION_FACTOR = 20
 
@@ -34,6 +34,12 @@ class Brick(pygame.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
 
+    def collide_points(self, points):
+        for point in points:
+            if self.rect.collidepoint(point):
+                return True
+        return False
+
 
 class Ball(pygame.sprite.Sprite):
     """docstring for Ball"""
@@ -47,22 +53,22 @@ class Ball(pygame.sprite.Sprite):
 
         # Variables to draw the ball
         self.image = pygame.Surface(BALL_SIZE)
-        self.image.fill(BLUE)
+        self.image.fill(WHITE)
         self.rect = self.image.get_rect()
-
-        # Variables that make movement possible
-        self.direction = 270
-        self.speed = BALL_SPEED
-
         self.rect.x = self.x
         self.rect.y = self.y
 
-        pygame.draw.ellipse(self.image, (255,0,0), self.rect)
+        # Variables that make movement possible
+        self.direction = 91
+        self.speed = BALL_SPEED
+
+        radius = int(BALL_SIZE[0] / 2)
+        self.rect = pygame.draw.circle(self.image, RED, [radius, radius], radius)
 
     def move(self):
         # If it hits a side of the screen, flip angle vertically
         if self.rect.x < 0 or self.rect.x > SCREEN_SIZE[0] - BALL_SIZE[0]:
-            self.direction = 540 - self.direction % 360
+            self.direction = (540 - self.direction) % 360
 
         # If it hits top/bottom of the screen, flip angle horizontally
         if self.rect.y < 0 or self.rect.y > SCREEN_SIZE[1]:
@@ -77,42 +83,26 @@ class Ball(pygame.sprite.Sprite):
         self.rect.x = self.x
         self.rect.y = self.y
 
-    def get_brick_collision_side(self, brick):
-        if self.direction == 90:
-            return 'bottom'
-
-        distances = {}
-
-        if self.direction >= 270:
-            distances['top'] = abs(brick.rect.top - self.rect.y)
-            distances['left'] = abs(brick.rect.left - self.rect.x)
-        elif self.direction >= 180:
-            distances['top'] = abs(brick.rect.top - self.rect.y)
-            distances['right'] = abs(brick.rect.right - self.rect.x)
-        elif self.direction >= 90:
-            distances['bottom'] = abs(brick.rect.bottom - self.rect.y)
-            distances['right'] = abs(brick.rect.right - self.rect.x)
+    def collidable_points(self):
+        if self.direction > 270:
+            return [self.rect.midbottom, self.rect.bottomright, self.rect.midright]
+        elif self.direction > 180:
+            return [self.rect.midleft, self.rect.bottomleft, self.rect.midbottom]
+        elif self.direction > 90:
+            return [self.rect.midleft, self.rect.topleft, self.rect.midtop]
         else:
-            distances['bottom'] = abs(brick.rect.bottom - self.rect.y)
-            distances['left'] = abs(brick.rect.left - self.rect.x)
-
-        return min(distances, key=distances.get)
-
+            return [self.rect.midtop, self.rect.topright, self.rect.midright]
 
     def check_bricks_collision(self):
         for brick in self.bricks:
-            collided = pygame.sprite.collide_rect(self, brick)
+            collided = False
+            collided = brick.collide_points(self.collidable_points())
 
             if not collided:
                 continue
 
-            collided_side = self.get_brick_collision_side(brick)
-
             brick.kill()
-            if collided_side == 'left' or collided_side == 'right':
-                self.direction = (540 - self.direction) % 360
-            else:
-                self.direction = (360 - self.direction)
+            self.direction = (360 - self.direction)
 
     def calculate_direction(self):
         max_angle = 180 - 2 * DEGREE_NORMALIZATION_FACTOR
@@ -124,11 +114,10 @@ class Ball(pygame.sprite.Sprite):
 
     def check_paddle_collision(self):
         was_hit = self.rect.colliderect(self.paddle.rect)
-        with_the_top = self.rect.bottom - 1 <= self.paddle.rect.top
 
         # If hit by the paddle go up and apply angle depending on which part of
         # the paddle it was hit by
-        if was_hit and with_the_top:
+        if was_hit:
             new_angle = self.calculate_direction()
             self.direction = (540 - new_angle) % 360
 
@@ -144,7 +133,7 @@ class Paddle(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
         self.rect.x = 0
-        self.rect.y = SCREEN_SIZE[1] - PADDLE_SIZE[1]
+        self.rect.y = SCREEN_SIZE[1] - PADDLE_SIZE[1] - 20
 
     def set_x(self, x):
         if x > SCREEN_SIZE[0] - PADDLE_SIZE[0]:
@@ -167,21 +156,19 @@ def main():
 
     pygame.display.set_caption('Breakout')
     pygame.mouse.set_visible(0)
-
     clock = pygame.time.Clock()
     screen = pygame.display.set_mode((SCREEN_SIZE[0], SCREEN_SIZE[1]), 0, 32)
-
-    running = True
-
-    sprites = pygame.sprite.Group()
 
     paddle = Paddle()
     bricks = generate_grid()
     ball = Ball(paddle, bricks)
 
+    sprites = pygame.sprite.Group()
     sprites.add(bricks)
     sprites.add(ball)
     sprites.add(paddle)
+
+    running = True
 
     while running:
         screen.fill(WHITE)
