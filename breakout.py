@@ -3,7 +3,7 @@ import math
 
 WHITE = (255, 255, 255)
 GREY = (100, 100, 100)
-BLACK = (0, 0, 0)
+BLACK = (30, 30, 30)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 
@@ -41,10 +41,13 @@ class Brick(pygame.sprite.Sprite):
         return False
 
 
-class Ball(pygame.sprite.Sprite):
+class Player(pygame.sprite.Sprite):
     """docstring for Ball"""
     def __init__(self, paddle, bricks):
-        super(Ball, self).__init__()
+        super(Player, self).__init__()
+        # Player
+        self.lives = 3
+
         # Objects that the ball interacts with
         self.bricks = bricks
         self.paddle = paddle
@@ -70,8 +73,13 @@ class Ball(pygame.sprite.Sprite):
         if self.rect.x < 0 or self.rect.x > SCREEN_SIZE[0] - BALL_SIZE[0]:
             self.direction = (540 - self.direction) % 360
 
-        # If it hits top/bottom of the screen, flip angle horizontally
-        if self.rect.y < 0 or self.rect.y > SCREEN_SIZE[1]:
+        # If it hits top of the screen, flip angle horizontally
+        if self.rect.y < 0:
+            self.direction = 360 - self.direction
+
+        # If it hits bottom of the screen, loose a life
+        if self.rect.bottom > SCREEN_SIZE[1]:
+            self.lives -= 1
             self.direction = 360 - self.direction
 
         self.check_paddle_collision()
@@ -151,8 +159,14 @@ def generate_grid():
 
     return bricks
 
+def reresh_score(screen, player):
+    score_font = pygame.font.SysFont('Courier New', 30)
+    textsurface = score_font.render(f'Lives {player.lives}', True, BLACK)
+    screen.blit(textsurface, (20, 20))
+
 def main():
     pygame.init()
+    pygame.font.init()
 
     pygame.display.set_caption('Breakout')
     pygame.mouse.set_visible(0)
@@ -161,19 +175,20 @@ def main():
 
     paddle = Paddle()
     bricks = generate_grid()
-    ball = Ball(paddle, bricks)
+    player = Player(paddle, bricks)
 
     sprites = pygame.sprite.Group()
     sprites.add(bricks)
-    sprites.add(ball)
+    sprites.add(player)
     sprites.add(paddle)
 
     running = True
 
     while running:
         screen.fill(WHITE)
-        ball.move()
+        player.move()
         sprites.draw(screen)
+        reresh_score(screen, player)
 
         for event in pygame.event.get():
             # Stop running when the user clicks close window button
