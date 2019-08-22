@@ -8,7 +8,7 @@ BLACK = (0, 0, 0)
 GREY = (100, 100, 100)
 
 BALL_SIZE = [20, 20]
-BALL_SPEED = 0.75
+BALL_SPEED = 5
 
 BRICK_SIZE = (40, 20)
 
@@ -166,9 +166,9 @@ def main():
     pygame.init()
 
     pygame.display.set_caption('Breakout')
-
     pygame.mouse.set_visible(0)
 
+    clock = pygame.time.Clock()
     screen = pygame.display.set_mode((SCREEN_SIZE[0], SCREEN_SIZE[1]), 0, 32)
 
     running = True
@@ -199,6 +199,7 @@ def main():
                 paddle.set_x(mouse_position[0])
 
         pygame.display.update()
+        clock.tick(120)
 
 if __name__ == '__main__':
     main()
